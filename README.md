@@ -35,11 +35,7 @@
 pip install pandas geopandas shapely
 ```
 
-## Порядок запуска
-
-### 1. Проверка качества данных
-
-При необходимости выполнить SQL-скрипт
+### Проверка качества данных
 
 ```
 src/quality_analysis.sql
@@ -52,39 +48,34 @@ src/quality_analysis.sql
 - некорректных дат;
 - отсутствующей геометрии.
 
-### 2. Пространственный анализ
+## Запуск в Google Colab
 
-Запустить
+### 1. Откройте Colab
 
-```
-src/spatial_analysis.py
-```
+Перейдите по ссылке: [colab.research.google.com](https://colab.research.google.com)
 
-Скрипт:
+Создайте новый ноутбук: **File → New Notebook**
 
-- объединяет поля geom_a_wkt, geom_b_wkt и geom_c_wkt;
-- проверяет валидность геометрии;
-- преобразует систему координат в EPSG:28406;
-- выполняет поиск пространственно-временных коллизий;
-- сохраняет результат в
+### 2. Установите зависимости
 
-```
-out/collisions.csv
+```python
+!pip install geopandas shapely
 ```
 
-### 3. Формирование аналитической витрины
+### 3. Загрузите данные
 
-Запустить
+```python
+from google.colab import files
+uploaded = files.upload()
+# Выберите файл street_cases.csv
+```
 
-```
-src/datamart.py
-```
 
-Скрипт рассчитывает агрегированные показатели и формирует
+### 4. Загрузите и выполните скрипты
 
-```
-out/datamart.csv
-```
+**Скопируйте содержимое `src/spatial_analysis.py` в ячейку и выполните.**
+
+**Скопируйте содержимое `src/datamart.py` в следующую ячейку и выполните.**
 
 ## Логика решения
 
@@ -96,7 +87,7 @@ out/datamart.csv
 Для оценки силы конфликта используется показатель
 
 ```
-Conflict Score = SpatialOverlap × TimeOverlap × PriorityWeight
+Conflict Score = SpatialOverlap * TimeOverlap * PriorityWeight
 ```
 
 где:
@@ -111,4 +102,3 @@ Conflict Score = SpatialOverlap × TimeOverlap × PriorityWeight
 |------|----------|
 | collisions.csv | Таблица всех выявленных коллизий |
 | datamart.csv | Агрегированные показатели для BI |
-
