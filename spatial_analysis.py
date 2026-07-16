@@ -18,42 +18,48 @@ df["geometry_wkt"] = (
     .fillna(df["geom_c_wkt"])
 )
 
-# удаление записей без WKT строки
+# удаление записей без WKT строки (NaN, пустая строка, nan)
 df = df[df["geometry_wkt"].notna()].copy()
+df = df[df["geometry_wkt"].str.strip() != ""].copy()
+df = df[df["geometry_wkt"].str.strip() != "nan"].copy()
 
 # исправление геометрии (замыкание полигона)
 def fix_geometry(wkt_str):
     try:
         geom = wkt.loads(wkt_str)
         
-        if geom.geom_type == "Polygon":
-            coords = list(geom.exterior.coords)
-            if coords[0] != coords[-1]:
-                coords.append(coords[0])
-
-                return Polygon(coords)
+        if geom.is_empty:
+            return None
         
-        return geom
+        if not geom.is_valid:
+            geom = geom.buffer(0)
+            if geom.is_empty:
+                return None
+        
+        return geom if geom.is_valid else None
     except:
         return None
 
 df["geometry"] = df["geometry_wkt"].apply(fix_geometry)
 df = df[df["geometry"].notna()].copy()
+df = df[~df["geometry"].apply(lambda geom: geom.is_empty)].copy()
 
-# GeoDataFrame
+# GeoDataFrame с CRS
 gdf = gpd.GeoDataFrame(df, geometry="geometry", crs="EPSG:4326")
 
 # проверка CRS
 if gdf.crs is None:
     gdf = gdf.set_crs("EPSG:4326", allow_override=True)
 
-if gdf.crs != "EPSG:4326":
-    gdf = gdf.to_crs("EPSG:4326")
+gdf = gdf.to_crs("EPSG:28406")
 
 # проверка геометрии
 invalid = gdf[~gdf.geometry.is_valid]
 if len(invalid) > 0:
     gdf = gdf[gdf.geometry.is_valid]
+
+# исключение canceled
+gdf = gdf[gdf["status"] != "canceled"].copy()
 
 # три слоя
 layer_A = gdf[gdf["dataset_code"] == "A"]
@@ -69,9 +75,9 @@ priority_weights = {
 }
 
 def priority_weight(p1, p2):
-    p1_val = 4 if pd.isna(p1) else int(p1)
-    p2_val = 4 if pd.isna(p2) else int(p2)
-    
+    p1_val = 4 if pd.isna(p1) else int(float(p1))
+    p2_val = 4 if pd.isna(p2) else int(float(p2))
+
     w1 = priority_weights.get(p1_val, 1)
     w2 = priority_weights.get(p2_val, 1)
     return (w1 + w2) / 2
@@ -155,15 +161,21 @@ def analyse_pair(layer1, layer2):
             )
 
             rows.append({
-                "dataset_1": a.dataset_code,
-                "object_1": a.source_object_id,
-                "dataset_2": b.dataset_code,
-                "object_2": b.source_object_id,
-                "spatial_intersection": True,
-                "temporal_intersection": temporal,
-                "overlap_days": days,
-                "conflict_score": round(score, 3)
-            })
+              "dataset_1": a.dataset_code,
+              "object_1": a.source_object_id,
+              "status_1": a.status,                    
+              "priority_1": a.priority,                
+              "work_type_1": a.work_type,             
+              "dataset_2": b.dataset_code,
+              "object_2": b.source_object_id,
+              "status_2": b.status,                    
+              "priority_2": b.priority,                
+              "work_type_2": b.work_type,              
+              "spatial_intersection": True,
+              "temporal_intersection": temporal,
+              "overlap_days": days,
+              "conflict_score": round(score, 3)
+          })
 
     return pd.DataFrame(rows)
 
