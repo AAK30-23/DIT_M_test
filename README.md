@@ -12,6 +12,7 @@
 |-- out
 │   |-- collisions.csv
 │   |-- datamart.csv
+│   |-- Dashboard.bpix
 │
 ├-- src
 │   |-- spatial_analysis.py
