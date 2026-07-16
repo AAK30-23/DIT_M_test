@@ -104,5 +104,6 @@ Conflict Score = SpatialOverlap * TimeOverlap * PriorityWeight
 | datamart.csv | Агрегированные показатели для BI |
 
 ## Визуализация результатов
+Dashboard.bpix
 <img width="1117" height="627" alt="image" src="https://github.com/user-attachments/assets/0864579d-548c-4bd9-bdcf-32c37ec0b91a" />
 
