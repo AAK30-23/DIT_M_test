@@ -25,30 +25,35 @@ df = df[df["geometry_wkt"].notna()].copy()
 def fix_geometry(wkt_str):
     try:
         geom = wkt.loads(wkt_str)
-
+        
         if geom.geom_type == "Polygon":
             coords = list(geom.exterior.coords)
-            
             if coords[0] != coords[-1]:
                 coords.append(coords[0])
-                
+
                 return Polygon(coords)
         
         return geom
     except:
         return None
 
-# Применяем исправление
 df["geometry"] = df["geometry_wkt"].apply(fix_geometry)
-
-# Дополнительное удаление записей, где геометрия стала None после wkt.loads
 df = df[df["geometry"].notna()].copy()
 
 # GeoDataFrame
 gdf = gpd.GeoDataFrame(df, geometry="geometry", crs="EPSG:4326")
 
+# проверка CRS
+if gdf.crs is None:
+    gdf = gdf.set_crs("EPSG:4326", allow_override=True)
+
+if gdf.crs != "EPSG:4326":
+    gdf = gdf.to_crs("EPSG:4326")
+
 # проверка геометрии
-gdf = gdf[gdf.geometry.is_valid].copy()
+invalid = gdf[~gdf.geometry.is_valid]
+if len(invalid) > 0:
+    gdf = gdf[gdf.geometry.is_valid]
 
 # три слоя
 layer_A = gdf[gdf["dataset_code"] == "A"]
@@ -162,7 +167,7 @@ def analyse_pair(layer1, layer2):
 
     return pd.DataFrame(rows)
 
-# анализ пар
+# анализ
 ab = analyse_pair(layer_A, layer_B)
 ac = analyse_pair(layer_A, layer_C)
 bc = analyse_pair(layer_B, layer_C)
