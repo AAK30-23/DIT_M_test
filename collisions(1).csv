@@ -1,0 +1,8 @@
+dataset_1,object_1,status_1,priority_1,work_type_1,dataset_2,object_2,status_2,priority_2,work_type_2,spatial_intersection,temporal_intersection,overlap_days,conflict_score
+A,A-001,done,2.0,Благоустройство: МАФ,B,B-001,in_progress,1.0,Инжсети: связь,True,True,7,0.244
+A,A-003,in_progress,2.0,Благоустройство: МАФ,B,B-003,in_progress,,Инжсети: водопровод,True,True,11,1.994
+A,A-001,done,2.0,Благоустройство: МАФ,C,C-001,done,2.0,ОДХ: ремонт покрытия,True,True,8,0.239
+A,A-003,in_progress,2.0,Благоустройство: МАФ,C,C-003,in_progress,,ОДХ: ремонт покрытия,True,True,10,1.813
+B,B-001,in_progress,1.0,Инжсети: связь,C,C-001,done,2.0,ОДХ: ремонт покрытия,True,True,22,3.5
+B,B-003,in_progress,,Инжсети: водопровод,C,C-003,in_progress,,ОДХ: ремонт покрытия,True,True,10,0.909
+B,B-004,in_progress,4.0,Инжсети: связь,C,C-001,done,2.0,ОДХ: ремонт покрытия,True,True,9,1.2
