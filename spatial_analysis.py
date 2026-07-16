@@ -1,24 +1,48 @@
 import pandas as pd
 import geopandas as gpd
 from shapely import wkt
+from shapely.geometry import Polygon, LinearRing
 
-df = pd.read_csv("data/works.csv")
+from google.colab import files
+f = files.upload()
+df = pd.read_csv("street_cases1.csv", sep='$')
 
 # даты
-df["start_dt"] = pd.to_datetime(df["start_dt"], dayfirst=True)
-df["end_dt"] = pd.to_datetime(df["end_dt"], dayfirst=True)
+df["start_dt"] = pd.to_datetime(df["start_dt"], format='mixed', errors='coerce')
+df["end_dt"] = pd.to_datetime(df["end_dt"], format='mixed', errors='coerce')
 
 # поле geometry
-df["geometry"] = (df["geom_a_wkt"]
+df["geometry_wkt"] = (
+    df["geom_a_wkt"]
     .fillna(df["geom_b_wkt"])
     .fillna(df["geom_c_wkt"])
 )
 
-# удаление записей без геометрии
-df = df[df["geometry"].notna()].copy()
+# удаление записей без WKT строки
+df = df[df["geometry_wkt"].notna()].copy()
 
-# Преобразуем WKT в геометрию
-df["geometry"] = df["geometry"].apply(wkt.loads)
+# исправление геометрии (замыкание полигона)
+def fix_geometry(wkt_str):
+    try:
+        geom = wkt.loads(wkt_str)
+
+        if geom.geom_type == "Polygon":
+            coords = list(geom.exterior.coords)
+            
+            if coords[0] != coords[-1]:
+                coords.append(coords[0])
+                
+                return Polygon(coords)
+        
+        return geom
+    except:
+        return None
+
+# Применяем исправление
+df["geometry"] = df["geometry_wkt"].apply(fix_geometry)
+
+# Дополнительное удаление записей, где геометрия стала None после wkt.loads
+df = df[df["geometry"].notna()].copy()
 
 # GeoDataFrame
 gdf = gpd.GeoDataFrame(df, geometry="geometry", crs="EPSG:4326")
@@ -40,8 +64,11 @@ priority_weights = {
 }
 
 def priority_weight(p1, p2):
-    w1 = priority_weights.get(int(p1), 1)
-    w2 = priority_weights.get(int(p2), 1)
+    p1_val = 4 if pd.isna(p1) else int(p1)
+    p2_val = 4 if pd.isna(p2) else int(p2)
+    
+    w1 = priority_weights.get(p1_val, 1)
+    w2 = priority_weights.get(p2_val, 1)
     return (w1 + w2) / 2
 
 
@@ -135,7 +162,7 @@ def analyse_pair(layer1, layer2):
 
     return pd.DataFrame(rows)
 
-# анализ
+# анализ пар
 ab = analyse_pair(layer_A, layer_B)
 ac = analyse_pair(layer_A, layer_C)
 bc = analyse_pair(layer_B, layer_C)
@@ -147,8 +174,8 @@ collisions = pd.concat(
 
 # сохранение
 collisions.to_csv(
-    "results/collisions.csv",
+    "collisions.csv",
     index=False
 )
-
+files.download("collisions.csv")
 print(collisions)
