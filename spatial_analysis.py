@@ -5,7 +5,7 @@ from shapely.geometry import Polygon, LinearRing
 
 from google.colab import files
 f = files.upload()
-df = pd.read_csv("street_cases1.csv", sep='$')
+df = pd.read_csv("street_cases.csv", sep='$')
 
 # даты
 df["start_dt"] = pd.to_datetime(df["start_dt"], format='mixed', errors='coerce')
