@@ -11,6 +11,10 @@ df = pd.read_csv("street_cases.csv", sep='$')
 df["start_dt"] = pd.to_datetime(df["start_dt"], format='mixed', errors='coerce')
 df["end_dt"] = pd.to_datetime(df["end_dt"], format='mixed', errors='coerce')
 
+mask = df["start_dt"] > df["end_dt"]
+if mask.any():
+    df.loc[mask, ["start_dt", "end_dt"]] = df.loc[mask, ["end_dt", "start_dt"]].values
+
 # поле geometry
 df["geometry_wkt"] = (
     df["geom_a_wkt"]
